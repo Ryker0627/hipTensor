@@ -34,6 +34,7 @@
 #include "logger.hpp"
 
 #include "hiptensor_options.hpp"
+#include "timer.hpp"
 
 // Convert between vectors of void ptrs stored in opaque API objects
 // to vectors of ContractionSolution ptrs with simple cast.
@@ -427,6 +428,10 @@ hiptensorStatus_t hiptensorInitContractionPlan(const hiptensorHandle_t*         
     using hiptensor::Logger;
     auto& logger = Logger::instance();
 
+    using hiptensor::Timer;
+    auto& timer = Timer::instance();
+    timer->start("Total contraction plan time");
+
     // Log API access
 
     char msg[256];
@@ -602,6 +607,8 @@ hiptensorStatus_t hiptensorInitContractionPlan(const hiptensorHandle_t*         
     // Assign the contraction descriptor
     plan->mContractionDesc = *desc;
     plan->mSolution        = winner;
+
+    timer->end("Total contraction plan time");
 
     return HIPTENSOR_STATUS_SUCCESS;
 }

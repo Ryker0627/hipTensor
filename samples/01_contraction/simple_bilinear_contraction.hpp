@@ -33,6 +33,7 @@
 #include <unordered_map>
 
 #include "common.hpp"
+#include "timer.hpp"
 
 template <typename ADataType,
           typename BDataType,
@@ -43,6 +44,11 @@ template <typename ADataType,
           hiptensorComputeType_t typeCompute>
 int bilinearContractionSample(void* alpha, void* beta)
 {
+    using hiptensor::Timer;
+    auto& timer = Timer::instance();
+    timer->start("Total execute time");
+    timer->start("Data prepare time");
+
     /**********************
    * Computing: C_{m,n,u,v} = alpha * A_{m,n,h,k} B_{u,v,h,k} + beta *
    *C_{m,n,u,v}
@@ -64,6 +70,14 @@ int bilinearContractionSample(void* alpha, void* beta)
     extent['v'] = 3;
     extent['h'] = 6;
     extent['k'] = 5;
+
+    //extent['m'] = 40;
+    //extent['n'] = 30;
+    //extent['u'] = 40;
+    //extent['v'] = 30;
+    //extent['h'] = 60;
+    //extent['k'] = 50;
+
 
     std::vector<int64_t> c_ms_ns_lengths;
     for(auto mode : modeC)
@@ -187,18 +201,26 @@ int bilinearContractionSample(void* alpha, void* beta)
         }
     }
 
+    timer->end("Data prepare time");
+
     /********************************************
    * Transfer the Host Tensor to Device Memory *
    ********************************************/
     std::cout << "Initializing device data..." << std::endl;
 
+    timer->start("Transfer host tensor to device time");
+
     CHECK_HIP_ERROR(hipMemcpy(A_d, static_cast<const void*>(A), sizeA, hipMemcpyHostToDevice));
     CHECK_HIP_ERROR(hipMemcpy(B_d, static_cast<const void*>(B), sizeB, hipMemcpyHostToDevice));
     CHECK_HIP_ERROR(hipMemcpy(C_d, static_cast<const void*>(C), sizeC, hipMemcpyHostToDevice));
 
+    timer->end("Transfer host tensor to device time");
+
     /************************************************
    * Retrieve the memory alignment for each tensor
    ************************************************/
+    timer->start("Retrieve the memory alignment time");
+
     uint32_t alignmentRequirementA;
     CHECK_HIPTENSOR_ERROR(
         hiptensorGetAlignmentRequirement(handle, A_d, &a_ms_ks, &alignmentRequirementA));
@@ -211,9 +233,13 @@ int bilinearContractionSample(void* alpha, void* beta)
     CHECK_HIPTENSOR_ERROR(
         hiptensorGetAlignmentRequirement(handle, C_d, &c_ms_ns, &alignmentRequirementC));
 
+    timer->end("Retrieve the memory alignment time");
+
     /*******************************
    * Create Contraction Descriptor
    *******************************/
+
+    timer->start("Create contraction descriptor time");
 
     std::cout << "a_ms_ks: " << a_ms_ks << std::endl;
     std::cout << "b_ns_ks: " << b_ns_ks << std::endl;
@@ -240,11 +266,16 @@ int bilinearContractionSample(void* alpha, void* beta)
    ***************************/
 
     hiptensorContractionFind_t find;
-    CHECK_HIPTENSOR_ERROR(hiptensorInitContractionFind(handle, &find, HIPTENSOR_ALGO_ACTOR_CRITIC));
+    //CHECK_HIPTENSOR_ERROR(hiptensorInitContractionFind(handle, &find, HIPTENSOR_ALGO_ACTOR_CRITIC));
+    CHECK_HIPTENSOR_ERROR(hiptensorInitContractionFind(handle, &find, HIPTENSOR_ALGO_DEFAULT));
+
+    timer->end("Create contraction descriptor time");
 
     /**********************
    * Query workspace
    **********************/
+
+    timer->start("Query workspace time");
 
     uint64_t worksize = 0;
     CHECK_HIPTENSOR_ERROR(hiptensorContractionGetWorkspaceSize(
@@ -257,18 +288,28 @@ int bilinearContractionSample(void* alpha, void* beta)
         CHECK_HIP_ERROR(hipMalloc(static_cast<void**>(&workspace), worksize));
     }
 
+    timer->end("Query workspace time");
+
     /**************************
    * Create Contraction Plan
    **************************/
     std::cout << "Initializing contraction plan..." << std::endl;
 
+    timer->start("Contraction kernel selection time");
+
     hiptensorContractionPlan_t plan;
     CHECK_HIPTENSOR_ERROR(hiptensorInitContractionPlan(handle, &plan, &desc, &find, worksize));
 
+    timer->end("Contraction kernel selection time");
+
     std::cout << "Launching contraction kernel..." << std::endl;
+
+    timer->start("Contraction kernel execution time");
 
     CHECK_HIPTENSOR_ERROR(hiptensorContraction(
         handle, &plan, alpha, A_d, B_d, beta, C_d, C_d, workspace, worksize, 0 /* stream */));
+
+    timer->end("Contraction kernel execution time");
 
 #if !NDEBUG
     bool printElements = false;
@@ -343,6 +384,9 @@ int bilinearContractionSample(void* alpha, void* beta)
     HIPTENSOR_FREE_DEVICE(workspace);
 
     std::cout << "Finished!" << std::endl;
+
+    timer->end("Total execute time");
+    timer->report();
 
     return 0;
 }
