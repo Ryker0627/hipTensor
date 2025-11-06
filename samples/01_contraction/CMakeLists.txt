@@ -2,7 +2,7 @@
  #
  # MIT License
  #
- # Copyright (C) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
+ # Copyright (C) 2023-2026 Advanced Micro Devices, Inc. All rights reserved.
  #
  # Permission is hereby granted, free of charge, to any person obtaining a copy
  # of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ if( CMAKE_PROJECT_NAME STREQUAL "hiptensor" )
     add_hiptensor_sample(simple_scale_contraction_f64_f64_f64_compute_f64 simple_scale_contraction_f64_f64_f64_compute_f64.cpp)
     add_hiptensor_sample(simple_contraction_plan_cache simple_contraction_plan_cache.cpp)
     add_hiptensor_sample(simple_contraction_c simple_contraction_c.c)
+    add_hiptensor_sample(batch_bilinear_contraction batch_bilinear_contraction.cpp)
 
 # If building hipTensor samples as a standalone Cmake project
 else()
@@ -94,4 +95,8 @@ else()
 
     add_executable(simple_contraction_c simple_contraction_c.c)
     target_link_libraries(simple_contraction_c PRIVATE hiptensor::hiptensor)
+
+    add_executable(batch_bilinear_contraction batch_bilinear_contraction.cpp)
+    target_link_libraries(batch_bilinear_contraction PRIVATE hiptensor::hiptensor)
+
 endif()

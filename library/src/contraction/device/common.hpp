@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright (C) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2023-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,8 @@
 // CK includes
 #include <add_device_operation_instance.hpp>
 #include <ck.hpp>
-#include <device_contraction_multiple_d_xdl_cshuffle.hpp>
+//#include <device_contraction_multiple_d_xdl_cshuffle.hpp>
+#include "../../../../ck_contraction/device_contraction_multiple_d_xdl_cshuffle.hpp"
 #include <element_wise_operation.hpp>
 #include <gemm_specialization.hpp>
 

@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright (C) 2023-2025 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2023-2026 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -213,6 +213,12 @@ namespace hiptensor
         candidates.clear();
         for(auto idx : indices)
             candidates.push_back(tmpCandidates[idx]);
+
+        std::cout<<"Solutions rank: "<<std::endl;
+        for(int i=0;i<candidates.size();i++) {
+            if(sol_times[indices[i]]>1.0e30) continue;
+            std::cout<<"uid="<<candidates[i]->uid()<<", name="<<candidates[i]->kernelName()<<", time="<<sol_times[indices[i]]<<" ms"<<std::endl;
+        }
 
         if(bestSolution == nullptr)
         {
